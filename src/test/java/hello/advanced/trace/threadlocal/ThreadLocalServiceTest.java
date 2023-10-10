@@ -1,0 +1,75 @@
+package hello.advanced.trace.threadlocal;
+
+import hello.advanced.trace.threadlocal.code.FieldService;
+import hello.advanced.trace.threadlocal.code.ThreadLocalService;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+@Slf4j
+public class ThreadLocalServiceTest {
+    private ThreadLocalService service = new ThreadLocalService();
+
+    @Test
+    @DisplayName("대조군 - 동시성 문제가 발생하지 않는 상황")
+    void field() throws Exception {
+        log.info("main start");
+
+        Runnable userA = () -> {
+            service.logic("userA");
+        };
+
+        Runnable userB = () -> {
+            service.logic("userB");
+        };
+
+        Thread threadA = new Thread(userA);
+        threadA.setName("thread-A");
+
+        Thread threadB = new Thread(userB);
+        threadB.setName("thread-B");
+
+        threadA.start();
+        sleep(2000); // 동시성 문제 발생X
+        threadB.start();
+
+        sleep(3000); // 메인 쓰레드 종료 대기
+        log.info("main exit");
+    }
+
+    @Test
+    @DisplayName("실험군 - 동시성 문제가 발생!")
+    void field_problem() throws Exception {
+        log.info("main start");
+
+        Runnable userA = () -> {
+            service.logic("userA");
+        };
+
+        Runnable userB = () -> {
+            service.logic("userB");
+        };
+
+        Thread threadA = new Thread(userA);
+        threadA.setName("thread-A");
+
+        Thread threadB = new Thread(userB);
+        threadB.setName("thread-B");
+
+        threadA.start();
+//        sleep(2000); // 동시성 문제 X
+        sleep(100); // 동시성 문제 O
+        threadB.start();
+
+        sleep(3000); // 메인 쓰레드 종료 대기
+        log.info("main exit");
+    }
+
+    private void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
